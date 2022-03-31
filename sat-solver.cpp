@@ -60,7 +60,7 @@ vector<vector<int> > readInput(vector<vector<int> > set_of_clauses)
 // TODO: Write results to output file
 void writeOutput(vector<int> variable_values)
 {
-
+    printValues(variable_values);
 }
 
 int main(int argc, char* argv[]) 
@@ -80,10 +80,10 @@ int main(int argc, char* argv[])
     for (int i = 0; i < num_variables + 1; i++) 
         variable_values.push_back(-1);
 
-    // // Perform sat solving (DPLL algorithm)
+    // Perform sat solving (DPLL algorithm)
     DPLL(variable_values);
 
-    // // Write results to outfile
+    // Write results to outfile
     writeOutput(variable_values);
 }
 
@@ -100,7 +100,7 @@ int varToIndex(int var)
     return abs(var);
 }
 
-// TODO: decide if var is the index or the actual variable
+// Evaluates a variable given an index (var) to be either true (1) or false (0) or unassigned (-1)
 int evaluateVariable(int var, vector<int> variable_values)
 {   
     int res;
@@ -111,9 +111,6 @@ int evaluateVariable(int var, vector<int> variable_values)
     // If variable is assigned, evaluate it based on sign
     else    
         res = (var < 0) ? !variable_values.at(varToIndex(var)) : variable_values.at(varToIndex(var));
-
-    cout << "variable " << var  << ", res: " << res << endl;
-
 
     return res;
 }
@@ -127,20 +124,10 @@ pair<int, int> isUnitClause(vector<int> clause, vector<int> variable_values)
     // Every variable but one must be assigned
     for (int var : clause)
     {
-
         if (evaluateVariable(var, variable_values) != -1)    // This variable is assigned
-        {
             num_unassigned--;
-            cout << "variable x" << var << " is already assigned" << endl;
-        }
         else
-        {
             unassigned_id = var;            // Otherwise, record unassigned variable
-            cout << "variable x" << var << " is unassigned" << endl;
-
-        }
-
-        cout << "num_unassigned = " << num_unassigned << endl;
     }
 
     int val_to_assign = -1;
@@ -194,32 +181,23 @@ int selectVar(vector<int> variable_values)
     for (int i = 1; i < variable_values.size(); i++)
     {
         if (variable_values.at(i) == -1)
-        {
-            cout << "found unassigned var: " << i << endl;
             return i;
-
-        }
     }
     
-    return -1;  // Should never reach this case
+    return -1;  // Should never reach this case -- it would mean there are no variables left to assign
 }
 
 // Determine if clause evaluates to one 
 bool checkIfClauseIsOne(vector<int> clause, vector<int> variable_values)
 {
-    cout << "checking if clause is one: " << endl;
+    // cout << "checking if clause is one: " << endl;
     // If any variable has a value of 1, the entire clause is one    
     for (int var : clause)
     {
-        cout << var << endl;
         if (evaluateVariable(var, variable_values) == 1)
-        {
-            cout << "this clause evaluates to 1!" << endl;
             return true;
-        }
     }
         
-    cout << "this clause DOES NOT evaluate to 1" << endl;
     return false;
 }
 
@@ -266,18 +244,11 @@ void printValues(vector<int> variable_values)
 // TODO: Return true if satisfied, false if not satisfied
 bool DPLL(vector<int> variable_values)
 {
-    cout << "call to DPLL" << endl;
-
     // Do BCP
     pair<int, int> L_V = containsUnitClaus(variable_values);
+    // while (set_of_clausescontains a unit clause due to literal L)
     while (L_V.first > 0)
     {
-        cout << "before printing vals" << endl;
-        
-        printValues(variable_values);
-
-        cout << "DPLL: L = " << L_V.first << ". Setting to " << L_V.second << endl;
-
         // Simplify set_of_clauses by setting variable for L to its required value
         // in all clauses in set_of_clauses
         variable_values = setVariable(L_V.first, L_V.second, variable_values);
@@ -288,16 +259,12 @@ bool DPLL(vector<int> variable_values)
 
     if (allOnes(variable_values))
     {
-        cout << "Set of clauses is all 1s" << endl;
-        printValues(variable_values);
+        writeOutput(variable_values);
 
         return true; // return SAT; have simplified every clause to be 1
     }
     if (containsZero(variable_values))
     {
-        cout << "Set of clauses contains a 0" << endl;
-        printValues(variable_values);
-
         return false; // return UNSAT; this is a conflict, this set of var assignment doesn't satisfy
     }
 
@@ -305,17 +272,18 @@ bool DPLL(vector<int> variable_values)
     
     // TODO: Heuristically choose an unassigned variable x and heuristically choose a value v (in selectVar function)
     int x = selectVar(variable_values), v = 1; 
-    cout << "setting variable " << x << " to " << v << endl;
     
-    if (DPLL(setVariable(x, v, variable_values))) // if( DPLL( set_of_clauses = simplified by setting x=v ) == SAT )
+    variable_values = setVariable(x, v, variable_values);
+    if (DPLL(variable_values)) // if( DPLL( set_of_clauses = simplified by setting x=v ) == SAT )
     {
-        cout << "tried x= " << x<< " and v= " << v << " and it worked" << endl;
-        printValues(variable_values);
-        return true; // return ( SAT )
+        // cout << "tried x= " << x<< " and v= " << v << " and it worked" << endl;
+        exit(1);
     }
     else  // else return( DPLL( set_of_clauses = simplified by setting x= ¬v ) )
     {
-        cout << "tried x = !v" << endl;
-        return (DPLL(setVariable(x, v-1, variable_values)));    
+        // cout << "original choice didn't work. trying x" << x << " = " << 1-v << endl;
+        variable_values = setVariable(x, 1-v, variable_values);
+
+        return (DPLL(variable_values));    
     }
 }
