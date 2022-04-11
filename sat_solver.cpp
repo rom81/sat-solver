@@ -20,8 +20,6 @@ void printValues(vector<int> variable_values);
 // TODO: Read in values from cnf file. Populate set_of_clauses, num_variables, and num_clauses
 vector<vector<int> > readInput(vector<vector<int> > set_of_clauses)
 {
-    // vector<vector<int> > set_of_clauses;
-
     string line; 
     ifstream input;
     input.open(infile);
@@ -36,46 +34,20 @@ vector<vector<int> > readInput(vector<vector<int> > set_of_clauses)
             cout << "num_clauses: " << num_clauses << endl;
         } else {
             int count = 0;
-            while(count < num_clauses) {
-                stringstream ss(line);
-                string num;
-                while(ss >> num) {
-                    cout << "num: " << num << endl;
-                    if(num.substr(0,1) == "-") {
-                        set_of_clauses[count].push_back(-1*stoi(num.substr(1,)));
-                    } else {
-                        set_of_clauses[count].push_back(stoi(num));
-                    }
-                }
-                count++;
-            } 
-        }
+            stringstream ss(line);
+            string num;
+            vector<int> row;
+            while(ss >> num) {
+                cout << "num: " << num << endl;
+                row.push_back(stoi(num));
+            }
+            cout << "\n" << endl;
+            set_of_clauses.push_back(row);
+
+            count++;
+    }
     }
     input.close();
-
-    /* TODO: Remove this when this function is complete (just for testing) */
-    num_variables = 3;
-    num_clauses = 4;
-
-    vector<int> clause;
-    clause.push_back(-1);
-    clause.push_back(3);
-    set_of_clauses.push_back(clause);   // Add -1 3
-    clause.clear();
-    clause.push_back(1);
-    clause.push_back(-2);
-    set_of_clauses.push_back(clause);   // Add 1 -2
-    clause.clear();
-    clause.push_back(2);
-    clause.push_back(1);
-    set_of_clauses.push_back(clause);   // Add 2 1
-    clause.clear();
-    clause.push_back(3);
-    clause.push_back(-2);
-    clause.push_back(1);
-    set_of_clauses.push_back(clause);   // Add 3 -2 1
-    /*****/
-    
 
     return set_of_clauses;
 }
@@ -109,18 +81,18 @@ int main(int argc, char* argv[])
     set_of_clauses = readInput(set_of_clauses);
 
     /* Stores variable values. Index 0 is empty; x1 maps to index 1, x2 to index 2, and so on */
-    vector<int> variable_values;    
+    // vector<int> variable_values;    
 
-    // Initialize all variable values to -1 (no values assigned yet). 
-    for (int i = 0; i < num_variables + 1; i++) 
-        variable_values.push_back(-1);
+    // // Initialize all variable values to -1 (no values assigned yet). 
+    // for (int i = 0; i < num_variables + 1; i++) 
+    //     variable_values.push_back(-1);
 
-    // Perform sat solving (DPLL algorithm)
-    bool sat;
-    sat = DPLL(variable_values);
+    // // Perform sat solving (DPLL algorithm)
+    // bool sat;
+    // sat = DPLL(variable_values);
 
-    // Write results to outfile
-    writeOutput(variable_values,sat);
+    // // Write results to outfile
+    // writeOutput(variable_values,sat);
 }
 
 vector<int> setVariable(int var, int val, vector<int> variable_values)
