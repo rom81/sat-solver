@@ -17,7 +17,7 @@ vector<vector<int> > set_of_clauses;    // Set of clauses; global and immutable
 bool DPLL(vector<int> variable_values);
 void printValues(vector<int> variable_values);
 
-// TODO: Read in values from cnf file. Populate set_of_clauses, num_variables, and num_clauses
+// Read in values from cnf file. Populate set_of_clauses, num_variables, and num_clauses
 vector<vector<int> > readInput(vector<vector<int> > set_of_clauses)
 {
     string line; 
@@ -38,10 +38,10 @@ vector<vector<int> > readInput(vector<vector<int> > set_of_clauses)
             string num;
             vector<int> row;
             while(ss >> num) {
-                cout << "num: " << num << endl;
+                // cout << "num: " << num << endl;
                 row.push_back(stoi(num));
             }
-            cout << "\n" << endl;
+            // cout << "\n" << endl;
             set_of_clauses.push_back(row);
 
             count++;
@@ -52,7 +52,7 @@ vector<vector<int> > readInput(vector<vector<int> > set_of_clauses)
     return set_of_clauses;
 }
 
-// TODO: Write results to output file
+// Write results to output file
 void writeOutput(vector<int> variable_values, bool sat)
 {
     ofstream output;
@@ -61,9 +61,15 @@ void writeOutput(vector<int> variable_values, bool sat)
     if(sat) {
         output << "s SATISFIABLE" << endl;
         output << "v ";
-        for(int i = 0; i < variable_values.size(); i++) {
-            output << to_string(variable_values.at(i)) << " ";
+        for(int i = 1; i < variable_values.size(); i++) 
+        {
+            if (variable_values.at(i) < 0)
+                output << "-" << to_string(i) << " ";
+            else 
+                output << to_string(i) << " ";
+
         }
+        output << "0";
     } else {
         output << "s UNSATISFIABLE" << endl;
     }
@@ -81,18 +87,15 @@ int main(int argc, char* argv[])
     set_of_clauses = readInput(set_of_clauses);
 
     /* Stores variable values. Index 0 is empty; x1 maps to index 1, x2 to index 2, and so on */
-    // vector<int> variable_values;    
+    vector<int> variable_values;    
 
-    // // Initialize all variable values to -1 (no values assigned yet). 
-    // for (int i = 0; i < num_variables + 1; i++) 
-    //     variable_values.push_back(-1);
+    // Initialize all variable values to -1 (no values assigned yet). 
+    for (int i = 0; i < num_variables + 1; i++) 
+        variable_values.push_back(-1);
 
-    // // Perform sat solving (DPLL algorithm)
-    // bool sat;
-    // sat = DPLL(variable_values);
-
-    // // Write results to outfile
-    // writeOutput(variable_values,sat);
+    // Perform sat solving (DPLL algorithm)
+    bool sat;
+    sat = DPLL(variable_values);
 }
 
 vector<int> setVariable(int var, int val, vector<int> variable_values)
@@ -249,7 +252,7 @@ void printValues(vector<int> variable_values)
     }
 }
 
-// TODO: Return true if satisfied, false if not satisfied
+// Return true if satisfied, false if not satisfied
 bool DPLL(vector<int> variable_values)
 {
     // Do BCP
@@ -257,6 +260,8 @@ bool DPLL(vector<int> variable_values)
     // while (set_of_clausescontains a unit clause due to literal L)
     while (L_V.first > 0)
     {
+
+        // TODO: 2-literal watching here
         // Simplify set_of_clauses by setting variable for L to its required value
         // in all clauses in set_of_clauses
         variable_values = setVariable(L_V.first, L_V.second, variable_values);
@@ -267,12 +272,15 @@ bool DPLL(vector<int> variable_values)
 
     if (allOnes(variable_values))
     {
+        printValues(variable_values);
         writeOutput(variable_values,true);
 
         return true; // return SAT; have simplified every clause to be 1
     }
     if (containsZero(variable_values))
     {
+        printValues(variable_values);
+        writeOutput(variable_values,false);
         return false; // return UNSAT; this is a conflict, this set of var assignment doesn't satisfy
     }
 
@@ -284,7 +292,6 @@ bool DPLL(vector<int> variable_values)
     variable_values = setVariable(x, v, variable_values);
     if (DPLL(variable_values)) // if( DPLL( set_of_clauses = simplified by setting x=v ) == SAT )
     {
-        // cout << "tried x= " << x<< " and v= " << v << " and it worked" << endl;
         exit(1);
     }
     else  // else return( DPLL( set_of_clauses = simplified by setting x= ¬v ) )
