@@ -1,3 +1,3 @@
 #!/bin/bash
 
-g++ --std=c++11 -g -o sat-solver sat-solver.cpp
+g++ -Wno-c++11-extensions sat_solver.cpp -o sat-solver
