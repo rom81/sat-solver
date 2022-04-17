@@ -1,3 +1,4 @@
+*.sat
 .vscode/
 sat-solver
 sat-solver.dSYM/

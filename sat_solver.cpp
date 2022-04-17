@@ -30,7 +30,7 @@ vector<vector<int> > readInput(vector<vector<int> > set_of_clauses)
         } else if(line.substr(0,1) == "p" || line.substr(0,1) == "P") {
             num_variables = stoi(line.substr(6,1));
             cout << "num_variables: " << num_variables << endl;
-            num_clauses = stoi(line.substr(8,1));
+            num_clauses = stoi(line.substr(8));
             cout << "num_clauses: " << num_clauses << endl;
         } else {
             int count = 0;
@@ -39,7 +39,8 @@ vector<vector<int> > readInput(vector<vector<int> > set_of_clauses)
             vector<int> row;
             while(ss >> num) {
                 // cout << "num: " << num << endl;
-                row.push_back(stoi(num));
+                if (stoi(num) != 0)            
+                    row.push_back(stoi(num));
             }
             // cout << "\n" << endl;
             set_of_clauses.push_back(row);
@@ -63,7 +64,8 @@ void writeOutput(vector<int> variable_values, bool sat)
         output << "v ";
         for(int i = 1; i < variable_values.size(); i++) 
         {
-            if (variable_values.at(i) < 0)
+            cout << variable_values.at(i) << endl;
+            if (variable_values.at(i) == 0)
                 output << "-" << to_string(i) << " ";
             else 
                 output << to_string(i) << " ";
@@ -100,8 +102,19 @@ int main(int argc, char* argv[])
 
 vector<int> setVariable(int var, int val, vector<int> variable_values)
 {
-    variable_values.at(var) = val;
-    return variable_values;
+    cout << "Setting x" << var << " to " << val << endl;
+
+    if (abs(var) <= num_variables)
+    {
+        variable_values.at(abs(var)) = val;
+        return variable_values;
+    }
+    // Trying to set a variable that we can't actually set
+    else 
+    {
+        cout << "ERROR: Can't set this variable, outside the range x1 to x" << num_variables << endl;
+        exit(1);
+    }
 }
 
 // Returns the mapping of a variable to an index in variable_values, e.g. x1 maps to 0,
@@ -135,10 +148,17 @@ pair<int, int> isUnitClause(vector<int> clause, vector<int> variable_values)
     // Every variable but one must be assigned
     for (int var : clause)
     {
+        // cout << "checking variable x" << var << endl;
         if (evaluateVariable(var, variable_values) != -1)    // This variable is assigned
+        {
+            // cout << "This variable is already assigned." << endl;
             num_unassigned--;
+        }
         else
+        {
+            // cout << "This variable is unassigned!" << endl;
             unassigned_id = var;            // Otherwise, record unassigned variable
+        }
     }
 
     int val_to_assign = -1;
@@ -150,6 +170,10 @@ pair<int, int> isUnitClause(vector<int> clause, vector<int> variable_values)
     // Otherwise, find the value to assign to this unassigned variable
     else // If complement, assign 0; otherwise assign 1
         val_to_assign = (unassigned_id < 0) ? 0 : 1;
+
+    // cout << "returning x" << unassigned_id << " and " << val_to_assign << endl;
+
+    // exit(0);
 
     // Return unassigned_id if it's a unit clause, otherwise return -1
     return make_pair(unassigned_id, val_to_assign);
@@ -166,7 +190,7 @@ pair<int, int> containsUnitClaus(vector<int> variable_values)
         if (res.first != -1)
             return res;  // Found a unit clause!
     }
-    return pair<int, int>(-1,-1);
+    return pair<int, int>(0,0);
 }
 
 // Determine if clause evaluates to zero
@@ -194,8 +218,9 @@ int selectVar(vector<int> variable_values)
         if (variable_values.at(i) == -1)
             return i;
     }
-    
-    return -1;  // Should never reach this case -- it would mean there are no variables left to assign
+
+    cout << "ERROR: Attempted to select a variable, but there are no variables left to assign."<<endl;
+    exit(1);  // Should never reach this case -- it would mean there are no variables left to assign
 }
 
 // Determine if clause evaluates to one 
@@ -255,16 +280,24 @@ void printValues(vector<int> variable_values)
 // Return true if satisfied, false if not satisfied
 bool DPLL(vector<int> variable_values)
 {
+    cout << "call to DPL. Current variable values: " << endl;
+    // printValues(variable_values);
+
     // Do BCP
     pair<int, int> L_V = containsUnitClaus(variable_values);
+
+    cout << "L = x" << L_V.first << ": " << L_V.second << endl;
     // while (set_of_clausescontains a unit clause due to literal L)
-    while (L_V.first > 0)
+    while (L_V.first != 0)
     {
+        cout << "Found unit clause! Setting x" << L_V.first << " to " << L_V.second << endl;
 
         // TODO: 2-literal watching here
         // Simplify set_of_clauses by setting variable for L to its required value
         // in all clauses in set_of_clauses
         variable_values = setVariable(L_V.first, L_V.second, variable_values);
+
+        // printValues(variable_values);
 
         // Check for other unit clauses
         L_V = containsUnitClaus(variable_values);
@@ -290,13 +323,19 @@ bool DPLL(vector<int> variable_values)
     int x = selectVar(variable_values), v = 1; 
     
     variable_values = setVariable(x, v, variable_values);
+
+    cout << "set variable x" << x << " to " << v << endl;
+
     if (DPLL(variable_values)) // if( DPLL( set_of_clauses = simplified by setting x=v ) == SAT )
     {
-        exit(1);
+        // cout << "DPLL has been satisfied!" << endl;
+        // printValues(variable_values);
+        // writeOutput(variable_values,true);
+        return true;
     }
     else  // else return( DPLL( set_of_clauses = simplified by setting x= ¬v ) )
     {
-        // cout << "original choice didn't work. trying x" << x << " = " << 1-v << endl;
+        cout << "original choice didn't work. trying x" << x << " = " << 1-v << endl;
         variable_values = setVariable(x, 1-v, variable_values);
 
         return (DPLL(variable_values));    
