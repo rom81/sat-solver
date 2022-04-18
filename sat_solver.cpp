@@ -28,6 +28,10 @@ vector<vector<int> > readInput(vector<vector<int> > set_of_clauses)
         if(line.substr(0,1) == "c" || line.substr(0,1) == "C") {
             continue;
         } else if(line.substr(0,1) == "p" || line.substr(0,1) == "P") {
+            // TODO: something in this case causes files with more than one
+            // digit in num_variables to be truncated, so  1,2,3,4,5,6,7,8,9 work,
+            // but anything greater than 10 gets truncated, causing an out_of_range exception
+            // later.
             num_variables = stoi(line.substr(6,1));
             cout << "num_variables: " << num_variables << endl;
             num_clauses = stoi(line.substr(8));
@@ -226,7 +230,7 @@ int selectVar(vector<int> variable_values)
 // Determine if clause evaluates to one 
 bool checkIfClauseIsOne(vector<int> clause, vector<int> variable_values)
 {
-    // cout << "checking if clause is one: " << endl;
+    cout << "checking if clause is one: " << endl;
     // If any variable has a value of 1, the entire clause is one    
     for (int var : clause)
     {
@@ -281,12 +285,12 @@ void printValues(vector<int> variable_values)
 bool DPLL(vector<int> variable_values)
 {
     cout << "call to DPL. Current variable values: " << endl;
-    // printValues(variable_values);
+    printValues(variable_values);
 
     // Do BCP
     pair<int, int> L_V = containsUnitClaus(variable_values);
 
-    cout << "L = x" << L_V.first << ": " << L_V.second << endl;
+    // cout << "L = x" << L_V.first << ": " << L_V.second << endl;
     // while (set_of_clausescontains a unit clause due to literal L)
     while (L_V.first != 0)
     {
@@ -305,6 +309,7 @@ bool DPLL(vector<int> variable_values)
 
     if (allOnes(variable_values))
     {
+        cout << "All clauses evaluate to one! Return true" << endl;
         printValues(variable_values);
         writeOutput(variable_values,true);
 
@@ -312,6 +317,7 @@ bool DPLL(vector<int> variable_values)
     }
     if (containsZero(variable_values))
     {
+        cout << "Some clause evaluates to 0 :( return false" << endl;
         printValues(variable_values);
         writeOutput(variable_values,false);
         return false; // return UNSAT; this is a conflict, this set of var assignment doesn't satisfy
@@ -319,7 +325,8 @@ bool DPLL(vector<int> variable_values)
 
     // Otherwise, we need to recurse
     
-    // TODO: Heuristically choose an unassigned variable x and heuristically choose a value v (in selectVar function)
+    // TODO: Heuristically choose an unassigned variable x and heuristically 
+    // choose a value v (in selectVar function)
     int x = selectVar(variable_values), v = 1; 
     
     variable_values = setVariable(x, v, variable_values);
@@ -328,9 +335,7 @@ bool DPLL(vector<int> variable_values)
 
     if (DPLL(variable_values)) // if( DPLL( set_of_clauses = simplified by setting x=v ) == SAT )
     {
-        // cout << "DPLL has been satisfied!" << endl;
-        // printValues(variable_values);
-        // writeOutput(variable_values,true);
+        cout << "DPLL has been satisfied!" << endl;
         return true;
     }
     else  // else return( DPLL( set_of_clauses = simplified by setting x= ¬v ) )
